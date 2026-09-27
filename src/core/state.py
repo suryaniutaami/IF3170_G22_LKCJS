@@ -132,3 +132,12 @@ class State:
 
         return False
 
+    def getValue(self):
+        totalValue = 0
+
+        for p in self.packages:
+            if self.isInsidePeti(p):
+                totalValue += p.value
+
+        return totalValue
+
