@@ -1,5 +1,5 @@
 import random
-from core.entity import Package
+
 
 class StateHelper:
     @staticmethod
@@ -7,9 +7,9 @@ class StateHelper:
         return start1 < end2 and start2 < end1
     
     @staticmethod
-    def randomize(self, p: Package):
-            w, d, h = self.getDimOri(p)
-            wp, dp, hp = self.truck.dimPeti
+    def randomize(dimPaket, dimPeti):
+            w, d, h = dimPaket
+            wp, dp, hp = dimPeti
     
             return(
                 random.randint(0, wp + w),

@@ -14,13 +14,30 @@ class State:
     
     # Initial position paket random
     def random_position(self):
-        while True:
-            self.positions = {
-                package.id: StateHelper.randomize(package.dim, self.truck.dimPeti)
-                for package in self.packages
-            }
-            if self.isValid():
-                break
+        for p in self.packages:
+            while True:
+                position = StateHelper.randomize(self.getDimOri(p), self.truck.dimPeti)
+                # Simpan sementara
+                self.positions[p.id] = position
+        
+                # Cek validitas rando position p terhadap other paket yang udh ditempatkan
+                valid = True
+                if self.isFloating(p): valid = False
+                if not self.isInsidePeti(p) and not self.isOutsidePeti(p): valid = False
+
+                for other in self.packages:
+                    if other.id == p.id: continue
+                    if other.id not in self.positions: continue
+                    if self.isSupport(other, p) and other.isFragile: valid = False
+                    if self.isOverlapping(p, other): valid = False
+
+                if valid and self.isTruckCapacityOverload(): valid = False
+
+                if not(valid):
+                    del self.positions[p.id]
+                else:
+                    print(position)
+                    break
 
     # Getter
     def getPosition(self, p: Package):
@@ -78,6 +95,7 @@ class State:
         # Support dari paket lain
         for p2 in self.packages:
             if p2.id == p.id: continue
+            if p2.id not in self.positions: continue
             if self.isSupport(p2, p):
                 return False
             
@@ -99,6 +117,7 @@ class State:
 
     # Hubungan paket <-> peti
     def isInsidePeti(self, p: Package):
+        if p.id not in self.positions: return False
         x, y, z = self.positions[p.id]
         w, d, h = self.getDimOri(p)
 
@@ -114,6 +133,7 @@ class State:
         )
 
     def isOutsidePeti(self, p: Package):
+        if p.id not in self.positions: return False
         x, y, z = self.getPosition(p)
 
         wp, dp, hp = self.truck.dimPeti
@@ -127,6 +147,7 @@ class State:
     def isTruckCapacityOverload(self):
         totalCapacity = 0
         for p in self.packages:
+            if not(self.isInsidePeti(p)): continue
             totalCapacity += p.weight
             if (totalCapacity > self.truck.maxCapacity): return True
 
