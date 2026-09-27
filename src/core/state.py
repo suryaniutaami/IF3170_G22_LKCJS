@@ -1,5 +1,5 @@
-from entity import Package,  Truck
-from util import stateHelper
+from core.entity import Package, Truck
+from util.stateHelper import StateHelper
 
 class State:
     def __init__(self, packages: list[Package], truck: Truck):
@@ -16,7 +16,7 @@ class State:
     def random_position(self):
         while True:
             self.positions = {
-                package.id: stateHelper.randomize(package)
+                package.id: StateHelper.randomize(package.dim, self.truck.dimPeti)
                 for package in self.packages
             }
             if self.isValid():
@@ -64,8 +64,8 @@ class State:
         x2, y2, z2 = self.getPosition(p2)
 
         if not(z1+h1 == z2): return False
-        overlap_x = stateHelper.isOverlap1D(x1, x1+w1, x2, x2+w2)
-        overlap_y = stateHelper.isOverlap1D(y1, y1+d1, y2, y2+d2)
+        overlap_x = StateHelper.isOverlap1D(x1, x1+w1, x2, x2+w2)
+        overlap_y = StateHelper.isOverlap1D(y1, y1+d1, y2, y2+d2)
         
         return (overlap_x and overlap_y)
     
@@ -91,9 +91,9 @@ class State:
         w2, d2, h2 = self.getDimOri(p2)
         x2, y2, z2 = self.getPosition(p2)
 
-        overlap_x = stateHelper.isOverlap1D(x1, x1+w1, x2, x2+w2)
-        overlap_y = stateHelper.isOverlap1D(y1, y1+d1, y2, y2+d2)
-        overlap_z = stateHelper.isOverlap1D(z1, z1+h1, z2, z2+h2)
+        overlap_x = StateHelper.isOverlap1D(x1, x1+w1, x2, x2+w2)
+        overlap_y = StateHelper.isOverlap1D(y1, y1+d1, y2, y2+d2)
+        overlap_z = StateHelper.isOverlap1D(z1, z1+h1, z2, z2+h2)
 
         return (overlap_x and overlap_y and overlap_z)
 
