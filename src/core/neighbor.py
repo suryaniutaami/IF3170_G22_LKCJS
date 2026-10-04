@@ -1,11 +1,14 @@
 import copy
+import random
+from collections.abc import Iterator
 from core.state import State
 
 class Neighbor:
     """
     Operasi neighbor untuk local search.
-    Setiap operasi membuat deep copy state asal, menerapkan satu move,
-    lalu memvalidasi hasil dengan State.isValid().
+    Setiap operasi membuat deep copy dari state asal, menerapkan tepat satu
+    perubahan, lalu memvalidasi hasil dengan State.isValid(). State asal tidak
+    pernah dimodifikasi.
     """
 
     @staticmethod
@@ -21,7 +24,7 @@ class Neighbor:
 
     @staticmethod
     def swap(state: State, package1_id: str, package2_id: str):
-        #Menukar posisi dua package.
+        #Menukar posisi dua package dan mengembalikan state valid baru.
         if package1_id == package2_id:
             return None
 
@@ -71,12 +74,12 @@ class Neighbor:
         axis: str
     ) -> tuple[str, str, str]:
         """
-        Rotasi 90 derajat:
-        x -> y <-> z
-        y -> x <-> z
-        z -> x <-> y
-        Representasi orientation tidak menyimpan arah positif/negatif,
-        jadi rotasi cukup direpresentasikan sebagai pertukaran sumbu.
+        Rotasi 90 derajat berdasarkan representasi orientation saat ini.
+        Karena orientation hanya menyimpan sumbu yang sejajar dengan tiap sisi
+        package (tanpa arah positif/negatif), rotasi direpresentasikan sebagai:
+        - sumbu x: y <-> z
+        - sumbu y: x <-> z
+        - sumbu z: x <-> y
         """
         axis = axis.lower()
 
@@ -110,44 +113,34 @@ class Neighbor:
         return neighbor if neighbor.isValid() else None
 
     @staticmethod
-    def generate_swap_neighbors(state: State) -> list[State]:
-        neighbors = []
-
+    def iter_swap_neighbors(state: State) -> Iterator[State]:
         for i in range(len(state.packages)):
             for j in range(i + 1, len(state.packages)):
-                p1 = state.packages[i]
-                p2 = state.packages[j]
-
-                candidate = Neighbor.swap(state, p1.id, p2.id)
+                candidate = Neighbor.swap(
+                    state,
+                    state.packages[i].id,
+                    state.packages[j].id,
+                )
                 if candidate is not None:
-                    neighbors.append(candidate)
-
-        return neighbors
+                    yield candidate
 
     @staticmethod
-    def generate_rotation_neighbors(state: State) -> list[State]:
-        neighbors = []
-
+    def iter_rotation_neighbors(state: State) -> Iterator[State]:
         for package in state.packages:
             for axis in ("x", "y", "z"):
                 candidate = Neighbor.rotate(state, package.id, axis)
                 if candidate is not None:
-                    neighbors.append(candidate)
-
-        return neighbors
+                    yield candidate
 
     @staticmethod
-    def generate_move_neighbors(state: State) -> list[State]:
+    def iter_move_neighbors(state: State) -> Iterator[State]:
         """
         Menghasilkan seluruh valid neighbor dari operasi pindah koordinat.
         Batas koordinat mengikuti StateHelper.randomize() saat ini:
         x = 0 .. truck_width  + package_width
         y = 0 .. truck_depth  + package_depth
         z = 0 .. truck_height + package_height
-        Catatan: fungsi ini bisa menghasilkan kandidat sangat banyak.
         """
-        neighbors = []
-
         truck_w, truck_d, truck_h = state.truck.dimPeti
 
         for package in state.packages:
@@ -173,15 +166,82 @@ class Neighbor:
                         )
 
                         if candidate is not None:
-                            neighbors.append(candidate)
+                            yield candidate
 
-        return neighbors
+    @staticmethod
+    def iter_all(state: State) -> Iterator[State]:
+        yield from Neighbor.iter_swap_neighbors(state)
+        yield from Neighbor.iter_move_neighbors(state)
+        yield from Neighbor.iter_rotation_neighbors(state)
+
+    # Random successor for Stochastic Hill-Climbing
+
+    @staticmethod
+    def random_neighbor(
+        state: State,
+        rng: random.Random | None = None,
+        max_attempts: int = 100,
+    ):
+        """
+        Menghasilkan SATU successor valid secara random tanpa membangkitkan
+        seluruh successor terlebih dahulu.
+
+        Ini ditujukan untuk Stochastic Hill-Climbing sesuai materi kuliah:
+        successor dibangkitkan secara acak, bukan memilih dari seluruh daftar.
+        """
+        if max_attempts <= 0:
+            raise ValueError("max_attempts harus lebih dari 0.")
+        if not state.packages:
+            return None
+
+        rng = rng or random.Random()
+        operations = ["move", "rotate"]
+        if len(state.packages) >= 2:
+            operations.append("swap")
+
+        truck_w, truck_d, truck_h = state.truck.dimPeti
+
+        for _ in range(max_attempts):
+            operation = rng.choice(operations)
+
+            if operation == "swap":
+                p1, p2 = rng.sample(state.packages, 2)
+                candidate = Neighbor.swap(state, p1.id, p2.id)
+
+            elif operation == "rotate":
+                package = rng.choice(state.packages)
+                axis = rng.choice(("x", "y", "z"))
+                candidate = Neighbor.rotate(state, package.id, axis)
+
+            else:
+                package = rng.choice(state.packages)
+                package_w, package_d, package_h = state.getDimOri(package)
+                new_position = (
+                    rng.randint(0, truck_w + package_w),
+                    rng.randint(0, truck_d + package_d),
+                    rng.randint(0, truck_h + package_h),
+                )
+                candidate = Neighbor.move(state, package.id, new_position)
+
+            if candidate is not None:
+                return candidate
+
+        return None
+
+    # Backward-compatible list generators
+
+    @staticmethod
+    def generate_swap_neighbors(state: State) -> list[State]:
+        return list(Neighbor.iter_swap_neighbors(state))
+
+    @staticmethod
+    def generate_rotation_neighbors(state: State) -> list[State]:
+        return list(Neighbor.iter_rotation_neighbors(state))
+
+    @staticmethod
+    def generate_move_neighbors(state: State) -> list[State]:
+        return list(Neighbor.iter_move_neighbors(state))
 
     @staticmethod
     def generate_all(state: State) -> list[State]:
-        #Gabungan valid neighbor dari swap, move, dan rotate.
-        neighbors = []
-        neighbors.extend(Neighbor.generate_swap_neighbors(state))
-        neighbors.extend(Neighbor.generate_move_neighbors(state))
-        neighbors.extend(Neighbor.generate_rotation_neighbors(state))
-        return neighbors
+        return list(Neighbor.iter_all(state))
