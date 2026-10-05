@@ -36,7 +36,6 @@ class State:
                 if not(valid):
                     del self.positions[p.id]
                 else:
-                    print(position)
                     break
 
     # Getter
@@ -161,4 +160,3 @@ class State:
                 totalValue += p.value
 
         return totalValue
-
