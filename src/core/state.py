@@ -29,6 +29,8 @@ class State:
                     if other.id == p.id: continue
                     if other.id not in self.positions: continue
                     if self.isSupport(other, p) and other.isFragile: valid = False
+                    # p fragile tidak boleh tepat di bawah paket yang sudah ditempatkan
+                    if self.isSupport(p, other) and p.isFragile: valid = False
                     if self.isOverlapping(p, other): valid = False
 
                 if valid and self.isTruckCapacityOverload(): valid = False
