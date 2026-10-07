@@ -6,21 +6,68 @@ from core.state import State
 class Neighbor:
     """
     Operasi neighbor untuk local search.
-    Setiap operasi membuat deep copy dari state asal, menerapkan tepat satu
+    Setiap operasi membuat salinan ringan dari state asal, menerapkan tepat satu
     perubahan, lalu memvalidasi hasil dengan State.isValid(). State asal tidak
     pernah dimodifikasi.
     """
 
     @staticmethod
     def clone(state: State) -> State:
-        return copy.deepcopy(state)
+        """
+        Salinan ringan: dict posisi dan list package disalin, sedangkan objek
+        Package dan Truck dipakai bersama dengan state asal. Aman karena
+        satu-satunya operasi yang mengubah Package (rotate) mengganti package
+        tersebut dengan salinannya sendiri. Sebelumnya deepcopy memakan sekitar
+        60% waktu satu iterasi Steepest Ascent.
+        """
+        neighbor = copy.copy(state)
+        neighbor.packages = list(state.packages)
+        neighbor.positions = dict(state.positions)
+        return neighbor
 
     @staticmethod
-    def _get_package(state: State, package_id: str):
-        for package in state.packages:
+    def _package_index(state: State, package_id: str) -> int:
+        for index, package in enumerate(state.packages):
             if package.id == package_id:
-                return package
+                return index
         raise ValueError(f"Package dengan id '{package_id}' tidak ditemukan.")
+
+    @staticmethod
+    def _violates_local_constraint(state: State, package) -> bool:
+        """
+        Cek O(n) untuk constraint yang melibatkan `package` saja. Setiap cek di
+        sini juga dicek oleh State.isValid(), jadi True berarti state pasti
+        tidak valid. Dipakai untuk menolak kandidat lebih awal sebelum
+        isValid() yang O(n^2).
+        """
+        if not state.isInsidePeti(package) and not state.isOutsidePeti(package):
+            return True
+        if state.isFloating(package):
+            return True
+
+        for other in state.packages:
+            if other.id == package.id:
+                continue
+            if state.isOverlapping(package, other):
+                return True
+            if other.isFragile and state.isSupport(other, package):
+                return True
+            if package.isFragile and state.isSupport(package, other):
+                return True
+
+        return False
+
+    @staticmethod
+    def _is_valid_after_change(state: State, changed_ids: tuple[str, ...]) -> bool:
+        """
+        Hasil sama persis dengan state.isValid(); cek lokal hanya mempercepat
+        penolakan. Cek penuh tetap diperlukan karena perubahan satu package
+        bisa membuat package lain melayang.
+        """
+        for package in state.packages:
+            if package.id in changed_ids and Neighbor._violates_local_constraint(state, package):
+                return False
+        return state.isValid()
 
     @staticmethod
     def swap(state: State, package1_id: str, package2_id: str):
@@ -41,7 +88,8 @@ class Neighbor:
         neighbor.positions[package1_id] = pos2
         neighbor.positions[package2_id] = pos1
 
-        return neighbor if neighbor.isValid() else None
+        valid = Neighbor._is_valid_after_change(neighbor, (package1_id, package2_id))
+        return neighbor if valid else None
 
     @staticmethod
     def move(
@@ -66,7 +114,8 @@ class Neighbor:
         neighbor = Neighbor.clone(state)
         neighbor.positions[package_id] = new_position
 
-        return neighbor if neighbor.isValid() else None
+        valid = Neighbor._is_valid_after_change(neighbor, (package_id,))
+        return neighbor if valid else None
 
     @staticmethod
     def _rotate_orientation(
@@ -103,14 +152,18 @@ class Neighbor:
     def rotate(state: State, package_id: str, axis: str):
         # Merotasi package 90 derajat terhadap sumbu x/y/z. Posisi package dipertahankan.
         neighbor = Neighbor.clone(state)
-        package = Neighbor._get_package(neighbor, package_id)
+        index = Neighbor._package_index(neighbor, package_id)
 
-        package.orientation = Neighbor._rotate_orientation(
-            package.orientation,
+        # Package disalin dulu karena objek Package dipakai bersama state asal.
+        rotated = copy.copy(neighbor.packages[index])
+        rotated.orientation = Neighbor._rotate_orientation(
+            rotated.orientation,
             axis
         )
+        neighbor.packages[index] = rotated
 
-        return neighbor if neighbor.isValid() else None
+        valid = Neighbor._is_valid_after_change(neighbor, (package_id,))
+        return neighbor if valid else None
 
     @staticmethod
     def iter_swap_neighbors(state: State) -> Iterator[State]:
