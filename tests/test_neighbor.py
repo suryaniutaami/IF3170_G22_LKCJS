@@ -251,6 +251,34 @@ class TestNeighbor(unittest.TestCase):
 
         # Current state tidak berubah.
         self.assertEqual(state.positions["A"], (0, 0, 0))
+    def test_move_support_that_leaves_upper_package_floating_is_rejected(self):
+        # Cek lokal hanya melihat package yang dipindah; cek penuh tetap harus
+        # menolak state ketika package di atasnya jadi melayang.
+        lower = Package("A", (2, 2, 1), ("x", "y", "z"), 10, 1, False, 1)
+        upper = Package("B", (2, 2, 1), ("x", "y", "z"), 10, 1, False, 1)
+        truck = Truck((5, 5, 3), 10)
+
+        state = make_state(
+            [lower, upper],
+            truck,
+            {"A": (0, 0, 0), "B": (0, 0, 1)},
+        )
+        self.assertTrue(state.isValid())
+
+        self.assertIsNone(Neighbor.move(state, "A", (3, 3, 0)))
+
+    def test_chained_rotations_do_not_affect_earlier_states(self):
+        p1 = Package("A", (3, 2, 1), ("x", "y", "z"), 10, 1, False, 1)
+        truck = Truck((5, 5, 5), 10)
+
+        state = make_state([p1], truck, {"A": (0, 0, 0)})
+        first = Neighbor.rotate(state, "A", "z")
+        second = Neighbor.rotate(first, "A", "x")
+
+        self.assertEqual(state.packages[0].orientation, ("x", "y", "z"))
+        self.assertEqual(first.packages[0].orientation, ("y", "x", "z"))
+        self.assertEqual(second.packages[0].orientation, ("z", "x", "y"))
+
 
 if __name__ == "__main__":
     unittest.main()
