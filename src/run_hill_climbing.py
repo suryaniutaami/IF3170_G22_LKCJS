@@ -1,5 +1,6 @@
 # Demo sederhana untuk menjalankan seluruh varian Hill-Climbing.
 
+import random
 from algorithm.hill_climbing import (
     RandomRestartHillClimbing,
     SidewaysMoveHillClimbing,
@@ -26,7 +27,7 @@ def print_result(result):
 
 def main():
     packages, truck = Parser.parse("input.txt")
-    initial_state = State(packages, truck)
+    initial_state = State(packages, truck, random.Random())
 
     algorithms = [
         SteepestAscentHillClimbing(seed=42),

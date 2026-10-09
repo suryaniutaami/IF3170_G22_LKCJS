@@ -2,13 +2,14 @@ from core.entity import Package, Truck
 from util.stateHelper import StateHelper
 
 class State:
-    def __init__(self, packages: list[Package], truck: Truck):
+    def __init__(self, packages: list[Package], truck: Truck, rng):
         self.packages = packages
         self.truck = truck
+        self.rng = rng
         # --- POSISI PETI DAN PAKET ---
-        # Asumsi posisi peti kemas = (0,0,0) <- titik pojok kiri-bawah-belakang peti
+        # Asumsi posisi peti kemas = (0,0,0) <- titik pojok kiri-bawah-depan peti
         
-        # Posisi paket random, mapping package.id -> position (x,y,z) <- titik pojok kiri-bawah-belakang paket
+        # Posisi paket random, mapping package.id -> position (x,y,z) <- titik pojok kiri-bawah-depan paket
         self.positions = {}
         self.random_position()   
     
@@ -16,7 +17,7 @@ class State:
     def random_position(self):
         for p in self.packages:
             while True:
-                position = StateHelper.randomize(self.getDimOri(p), self.truck.dimPeti)
+                position = StateHelper.randomize(self.getDimOri(p), self.truck.dimPeti, self.rng)
                 # Simpan sementara
                 self.positions[p.id] = position
         

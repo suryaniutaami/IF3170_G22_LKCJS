@@ -1,4 +1,4 @@
-import random
+# import random
 
 
 class StateHelper:
@@ -7,12 +7,12 @@ class StateHelper:
         return start1 < end2 and start2 < end1
     
     @staticmethod
-    def randomize(dimPaket, dimPeti):
+    def randomize(dimPaket, dimPeti, rng):
             w, d, h = dimPaket
             wp, dp, hp = dimPeti
     
             return(
-                random.randint(0, wp + w),
-                random.randint(0, dp + d),
-                random.randint(0, hp + h)
+                rng.randint(0, wp + w),
+                rng.randint(0, dp + d),
+                rng.randint(0, hp + h)
         )

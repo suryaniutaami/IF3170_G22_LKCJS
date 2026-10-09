@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 
 from algorithm.simulated_annealing import SimulatedAnnealing
@@ -57,10 +58,11 @@ def save_plots(run_no, result):
 def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
     packages, truck = Parser.parse("input.txt")
+    rng = random.Random()
 
     summaries = []
     for run_no in range(1, N_RUNS + 1):
-        initial_state = State(packages, truck)  # initial state random baru tiap run
+        initial_state = State(packages, truck, rng)  # initial state random baru tiap run
         algorithm = SimulatedAnnealing(
             initial_temperature=100.0,
             cooling_rate=0.99,

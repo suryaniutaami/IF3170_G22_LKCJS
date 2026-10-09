@@ -1,10 +1,11 @@
+import random
 from util.parser import Parser
 from core.state import State
 from core.neighbor import Neighbor
 
 
 packages, truck = Parser.parse("input.txt")
-state = State(packages, truck)
+state = State(packages, truck, random.Random())
 
 print("=== INITIAL STATE ===")
 print("Positions:", state.positions)

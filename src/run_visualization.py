@@ -53,12 +53,10 @@ def resolve_save_path(args: argparse.Namespace) -> Path | None:
 def main() -> None:
     args = parse_args()
 
-    # State.random_position() memakai module random global, jadi seed perlu
-    # dipasang sebelum State dibuat agar demo dapat direproduksi.
-    random.seed(args.seed)
+    rng = random.Random(args.seed)
 
     packages, truck = Parser.parse(args.input)
-    initial_state = State(packages, truck)
+    initial_state = State(packages, truck, rng)
 
     result = ALGORITHMS[args.algorithm](args).run(initial_state)
     save_path = resolve_save_path(args)

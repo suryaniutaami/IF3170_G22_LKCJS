@@ -42,23 +42,13 @@ class HillClimbingBase:
     def _random_initial_state(self, template: State) -> State:
         """
         Membuat initial state random baru untuk Random-Restart HC.
-        State menggunakan modul random global. Agar parameter seed tetap dapat
-        direproduksi tanpa meninggalkan side effect global, state random global
-        disimpan lalu dipulihkan setelah konstruksi selesai.
+        Posisi state baru memakai RNG algoritma agar urutan hasil tetap seedable.
         """
-        global_random_state = random.getstate()
-        random.setstate(self.rng.getstate())
-
-        try:
-            state = State(
-                copy.deepcopy(template.packages),
-                copy.deepcopy(template.truck),
-            )
-            self.rng.setstate(random.getstate())
-        finally:
-            random.setstate(global_random_state)
-
-        return state
+        return State(
+            copy.deepcopy(template.packages),
+            copy.deepcopy(template.truck),
+            self.rng,
+        )
 
     @staticmethod
     def _best_result(results: Iterable):
