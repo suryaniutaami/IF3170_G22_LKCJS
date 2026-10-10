@@ -2,42 +2,32 @@ from core.entity import Package, Truck
 from util.stateHelper import StateHelper
 
 class State:
-    def __init__(self, packages: list[Package], truck: Truck, rng):
+
+    def __init__(self, packages: list[Package], truck: Truck, rng, random: bool = True, positions = None):
+        """Inisialisasi state dengan posisi paket acak atau posisi yang diberikan
+
+        Jika random bernilai True, posisi paket dibuat secara acak
+        menggunakan rng. Jika False, posisi diambil dari positions"""
+        
         self.packages = packages
         self.truck = truck
         self.rng = rng
+        self.random = random
         # --- POSISI PETI DAN PAKET ---
         # Asumsi posisi peti kemas = (0,0,0) <- titik pojok kiri-bawah-depan peti
         
         # Posisi paket random, mapping package.id -> position (x,y,z) <- titik pojok kiri-bawah-depan paket
-        self.positions = {}
+        self.positions = {} if positions is None else dict(positions)
         self.random_position()   
     
     # Initial position paket random
     def random_position(self):
-        for p in self.packages:
-            while True:
-                position = StateHelper.randomize(self.getDimOri(p), self.truck.dimPeti, self.rng)
-                # Simpan sementara
-                self.positions[p.id] = position
-        
-                # Cek validitas rando position p terhadap other paket yang udh ditempatkan
-                valid = True
-                if self.isFloating(p): valid = False
-                if not self.isInsidePeti(p) and not self.isOutsidePeti(p): valid = False
-
-                for other in self.packages:
-                    if other.id == p.id: continue
-                    if other.id not in self.positions: continue
-                    if self.isSupport(other, p) and other.isFragile: valid = False
-                    if self.isOverlapping(p, other): valid = False
-
-                if valid and self.isTruckCapacityOverload(): valid = False
-
-                if not(valid):
-                    del self.positions[p.id]
-                else:
-                    break
+        if self.random == True:
+            for p in self.packages:
+                while True:
+                    position = StateHelper.randomize(self.getDimOri(p), self.truck.dimPeti, self.rng)
+                    if self.isValidPlacement(p, position, self.positions, self.packages, self.truck, self.rng):
+                        break
 
     # Getter
     def getPosition(self, p: Package):
@@ -71,6 +61,40 @@ class State:
         if (self.isTruckCapacityOverload()): return False
         
         return True
+
+    @staticmethod
+    def isValidPlacement(p: Package, position, positions, packages: list[Package], truck: Truck, rng) -> bool:
+        # Simpan posisi kandidat sementara
+        positions[p.id] = position
+
+        # Buat state sementara
+        state = State(packages, truck, rng, False, positions)
+
+        # Cek validitas rando position p terhadap other paket yang udh ditempatkan
+        valid = True
+        # 1. Tidak boleh ngambang
+        if state.isFloating(p):
+            valid = False
+        # 2. Harus di dalam atau di luar peti
+        if not state.isInsidePeti(p) and not state.isOutsidePeti(p):
+            valid = False
+        # 3. Cek terhadap paket yang sudah ditempatkan
+        for other in state.packages:
+            if other.id == p.id: continue
+            if other.id not in positions: continue
+            if state.isOverlapping(p, other):
+                valid = False
+                break
+            if state.isSupport(other, p) and other.isFragile:
+                valid = False
+                break
+        # 4. Kapasitas truk 
+        if valid and state.isTruckCapacityOverload():
+            valid = False
+
+        if not valid:
+            del positions[p.id]
+        return valid
 
     def isSupport(self, p1: Package, p2: Package):
         """p1 berada di bawah p2"""
