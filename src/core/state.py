@@ -178,6 +178,7 @@ class State:
         return False
 
     def getValue(self):
+        """F.O: Memaksimalkan total value paket dalam peti"""
         totalValue = 0
 
         for p in self.packages:
@@ -185,3 +186,15 @@ class State:
                 totalValue += p.value
 
         return totalValue
+
+    def getValueWithUrgency(self):
+            """F.O: Memaksimalkan total value paket berbobot urgensi dalam peti 
+
+            berdasarkan ETA, dengan skor urgensi 1 / (1 + ETA)"""
+            totalValue = 0
+    
+            for p in self.packages:
+                if self.isInsidePeti(p):
+                    totalValue += p.value / (1 + p.eta)
+    
+            return totalValue
