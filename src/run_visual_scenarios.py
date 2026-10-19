@@ -29,6 +29,11 @@ class Scenario:
     expected_inside: int
     expected_weight: float
     expected_valid: bool = True
+    trucks: tuple[Truck, ...] | None = None   # None = satu truck standar (TRUCK_DIMS, TRUCK_CAPACITY)
+
+def fleet_of_two() -> tuple[Truck, ...]:
+    # Dua truck identik; T1 di x=0..10 dan T2 di x=12..22 (celah 2 unit)
+    return (Truck(TRUCK_DIMS, TRUCK_CAPACITY, "T1"), Truck(TRUCK_DIMS, TRUCK_CAPACITY, "T2"))
 
 def box(package_id, dim, value, weight, fragile=False, orientation=("x", "y", "z")) -> Package:
     return Package(package_id, dim, orientation, value, weight, fragile, 1)
@@ -37,7 +42,10 @@ def build_state(scenario: Scenario) -> State:
     """State dengan posisi manual; State() biasa selalu mengacak posisi."""
     state = State.__new__(State)
     state.packages = scenario.packages
-    state.truck = Truck(TRUCK_DIMS, TRUCK_CAPACITY)
+    if scenario.trucks is None:
+        state.truck = Truck(TRUCK_DIMS, TRUCK_CAPACITY)
+    else:
+        state.trucks = list(scenario.trucks)
     state.positions = dict(scenario.positions)
     return state
 
@@ -122,6 +130,46 @@ SCENARIOS = [
         packages=[box("P1", (3, 3, 2), 50, 15), box("P2", (3, 3, 2), 50, 16)],
         positions={"P1": (0, 0, 0), "P2": (4, 0, 0)},
         expected_value=100, expected_inside=2, expected_weight=31, expected_valid=False,
+    ),
+    Scenario(
+        name="two_trucks",
+        expect="P1 di T1 dan P2 di T2 -> keduanya IN, value dijumlahkan (160)",
+        packages=[box("P1", (3, 4, 1), 60, 5), box("P2", (2, 2, 3), 100, 8)],
+        positions={"P1": (0, 0, 0), "P2": (12, 0, 0)},
+        expected_value=160, expected_inside=2, expected_weight=13,
+        trucks=fleet_of_two(),
+    ),
+    Scenario(
+        name="capacity_per_truck",
+        expect="Tiap truck memuat 20/30 (total 40) -> VALID karena kapasitas dihitung per truck",
+        packages=[box("P1", (3, 3, 2), 50, 20), box("P2", (3, 3, 2), 50, 20)],
+        positions={"P1": (0, 0, 0), "P2": (12, 0, 0)},
+        expected_value=100, expected_inside=2, expected_weight=40,
+        trucks=fleet_of_two(),
+    ),
+    Scenario(
+        name="same_truck_over_capacity",
+        expect="Paket yang sama keduanya di T1: 40/30 -> INVALID",
+        packages=[box("P1", (3, 3, 2), 50, 20), box("P2", (3, 3, 2), 50, 20)],
+        positions={"P1": (0, 0, 0), "P2": (4, 0, 0)},
+        expected_value=100, expected_inside=2, expected_weight=40, expected_valid=False,
+        trucks=fleet_of_two(),
+    ),
+    Scenario(
+        name="straddle_between_trucks",
+        expect="P1 menembus dinding T1 (x=9..12) -> INVALID, tidak dihitung IN",
+        packages=[box("P1", (3, 4, 1), 60, 5)],
+        positions={"P1": (9, 0, 0)},
+        expected_value=0, expected_inside=0, expected_weight=0, expected_valid=False,
+        trucks=fleet_of_two(),
+    ),
+    Scenario(
+        name="in_gap_outside",
+        expect="P1 di celah antar truck (x=10..12) -> OUT, tetap VALID",
+        packages=[box("P1", (2, 2, 1), 60, 5)],
+        positions={"P1": (10, 0, 0)},
+        expected_value=0, expected_inside=0, expected_weight=0,
+        trucks=fleet_of_two(),
     ),
 ]
 

@@ -50,7 +50,7 @@ class GeneticAlgorithm:
         operation = self.rng.choice(operations) #random mutation value
         if operation == "move":
             for _ in range(100):
-                new_position = StateHelper.randomize(state.getDimOri(package), state.truck.dimPeti, self.rng)
+                new_position = StateHelper.randomize(state.getDimOri(package), state.extent, self.rng)
                 candidate = Neighbor.move(state, package.id, new_position)
                 if candidate is not None: return candidate
         elif operation == "rotate":
@@ -73,7 +73,7 @@ class GeneticAlgorithm:
     def _run_one_generation(self, population: list[State]) -> list[State]:
 
         countPackageIndividual = len(population[0].packages)
-        truck = population[0].truck
+        trucks = population[0].trucks
 
         # fitness function
         sumValue = 0
@@ -135,7 +135,7 @@ class GeneticAlgorithm:
                             candidatePosition,
                             positions,
                             parent1.packages,
-                            truck,
+                            trucks,
                             self.rng
                         ):
                             crossedPackages.append(package)
@@ -146,14 +146,14 @@ class GeneticAlgorithm:
                     while not placed and crossover_attempts < MAX_CROSSOVER_LIMIT:
                         crossover_attempts += 1
 
-                        newPosition = StateHelper.randomize(package.dim, truck.dimPeti, self.rng)
+                        newPosition = StateHelper.randomize(package.dim, population[0].extent, self.rng)
 
                         if State.isValidPlacement(
                             package,
                             newPosition,
                             positions,
                             parent1.packages,
-                            truck,
+                            trucks,
                             self.rng
                         ):
                             crossedPackages.append(package)
@@ -165,7 +165,7 @@ class GeneticAlgorithm:
                         return population
 
                 # Semua paket sudah ditempatkan -> satu child
-                crossedState.append(State(crossedPackages, truck, self.rng, False, positions))
+                crossedState.append(State(crossedPackages, trucks, self.rng, False, positions))
 
         # 3. mutation
         mutation_point = self.rng.randint(0, countPackageIndividual-1)
@@ -181,7 +181,7 @@ class GeneticAlgorithm:
         # initiate population
         population: list[State] = []
         for _ in range(self.nPopulation):
-            state = State(initial_state.packages, initial_state.truck, self.rng)
+            state = State(initial_state.packages, initial_state.trucks, self.rng)
             population.append(state)
 
         value_history: list[float] = []
@@ -237,5 +237,3 @@ class GeneticAlgorithm:
                 "random_position_rate": self.random_position_used/(self.nPopulation*count_package_individual*iterations)
             },
         )
-
-        

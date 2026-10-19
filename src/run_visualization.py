@@ -35,6 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Visualisasi initial & final state hasil Hill-Climbing")
     parser.add_argument("--algorithm", choices=ALGORITHMS, default="steepest", help="Algoritma yang dijalankan")
     parser.add_argument("--input", default="input.txt", help="Nama file di folder input/")
+    parser.add_argument("--trucks", type=int, default=None, help="Gandakan truk tunggal pada file menjadi N truk")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
 
     parser.add_argument("--max-sideways", type=int, default=10, help="[sideways] batas sideways move")
@@ -49,26 +50,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hide-outside", action="store_true", help="Sembunyikan package di luar truck")
     return parser.parse_args()
 
-def resolve_save_path(args: argparse.Namespace) -> Path | None:
+def resolve_save_path(args: argparse.Namespace, n_trucks: int = 1) -> Path | None:
     if args.no_save:
         return None
     if args.save:
         return Path(args.save)
-    return OUTPUT_DIR / f"{args.algorithm}_seed{args.seed}.png"
+    suffix = f"_{n_trucks}trucks" if n_trucks > 1 else ""
+    return OUTPUT_DIR / f"{args.algorithm}_seed{args.seed}{suffix}.png"
 
 def main() -> None:
     args = parse_args()
 
     rng = random.Random(args.seed)
 
-    packages, truck = Parser.parse(args.input)
-    initial_state = State(packages, truck, rng)
+    packages, trucks = Parser.parse(args.input, args.trucks)
+    initial_state = State(packages, trucks, rng)
 
     result = ALGORITHMS[args.algorithm](args).run(initial_state)
-    save_path = resolve_save_path(args)
+    save_path = resolve_save_path(args, len(trucks))
 
     print("=== VISUALIZATION ===")
     print(f"Algorithm     : {result.algorithm}")
+    print(f"Trucks        : {len(trucks)}")
     print(f"Initial value : {result.initial_value}")
     print(f"Final value   : {result.final_value}")
     print(f"Iterations    : {result.iterations}")

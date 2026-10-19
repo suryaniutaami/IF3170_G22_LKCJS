@@ -21,16 +21,25 @@ def draw_state_top_view(
     Package yang lebih tinggi digambar paling akhir sehingga tampak di atas.
     Label memuat koordinat z karena tumpukan tidak terlihat dari atas.
     """
-    truck_w, truck_d, _ = state.truck.dimPeti
-    ax.add_patch(
-        Rectangle(
-            (0, 0), truck_w, truck_d,
-            facecolor=style.TRUCK_FLOOR_COLOR,
-            edgecolor=style.TRUCK_EDGE_COLOR,
-            linewidth=style.TRUCK_EDGE_WIDTH,
-            alpha=style.FLOOR_ALPHA,
+    for index, truck in enumerate(state.trucks):
+        bx0, by0, _, bx1, by1, _ = state.truckBounds(index)
+        ax.add_patch(
+            Rectangle(
+                (bx0, by0), bx1 - bx0, by1 - by0,
+                facecolor=style.TRUCK_FLOOR_COLOR,
+                edgecolor=style.TRUCK_EDGE_COLOR,
+                linewidth=style.TRUCK_EDGE_WIDTH,
+                alpha=style.FLOOR_ALPHA,
+            )
         )
-    )
+        if len(state.trucks) > 1:
+            ax.text(
+                bx0 + 0.15, by1 - 0.15, truck.id,
+                ha="left", va="top",
+                fontsize=style.LABEL_FONT_SIZE + 2,
+                fontweight="bold",
+                color=style.TRUCK_EDGE_COLOR,
+            )
 
     packages = placed_packages(state, show_outside=show_outside)
     packages.sort(key=lambda package: _top_z(state, package))

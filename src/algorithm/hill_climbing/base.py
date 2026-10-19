@@ -46,7 +46,7 @@ class HillClimbingBase:
         """
         return State(
             copy.deepcopy(template.packages),
-            copy.deepcopy(template.truck),
+            copy.deepcopy(template.trucks),
             self.rng,
         )
 
