@@ -105,7 +105,7 @@ Setiap baris truk menggunakan format:
 [id] width depth height max_capacity
 ```
 
-ID truk opsional; jika tidak ditulis, program memberi ID `T1`, `T2`, dan seterusnya. Contoh input tersedia di `input/`, termasuk `input.txt`, `input_multi.txt`, `basic_small.txt`, `rotation_small.txt`, `capacity_small.txt`, `fragile_stack.txt`, dan `fleet_small.txt`.
+ID truk opsional; jika tidak ditulis, program memberi ID `T1`, `T2`, dan seterusnya. Contoh input tersedia di `input/`.
 
 Truk dalam armada diletakkan sepanjang sumbu X dengan jarak 2 unit. Posisi paket memakai koordinat global. Paket dihitung masuk truk bila seluruh baloknya berada di dalam satu truk; paket yang menembus dinding atau menjembatani dua truk tidak valid. Kapasitas diperiksa per truk. Objective utama adalah jumlah nilai paket yang berada di dalam truk.
 
