@@ -55,40 +55,61 @@ def _floor_polygon(x0: float, x1: float, y0: float, y1: float, color: str, zorde
     polygon.set_zorder(zorder)
     return polygon
 
-def draw_floor(ax: Axes, truck_dims: tuple[int, int, int], bounds: Bounds3D) -> None:
+def draw_floor(ax: Axes, state: State, bounds: Bounds3D) -> None:
     """
-    Lantai area luar (abu-abu) dan lantai truck (biru muda) di z=0.
+    Lantai area luar (abu-abu) dan lantai tiap truck (biru muda) di z=0.
     Lantai ini membuat package di belakang truck tidak terlihat seolah
     melayang di dalam truck.
     """
     (x0, x1), (y0, y1), _ = bounds
-    truck_w, truck_d, _ = truck_dims
 
     ax.add_collection3d(_floor_polygon(x0, x1, y0, y1, style.OUTSIDE_FLOOR_COLOR, Z_OUTSIDE_FLOOR))
-    ax.add_collection3d(_floor_polygon(0, truck_w, 0, truck_d, style.TRUCK_FLOOR_COLOR, Z_TRUCK_FLOOR))
+    for bx0, by0, _, bx1, by1, _ in state.truckBoundsList():
+        ax.add_collection3d(_floor_polygon(bx0, bx1, by0, by1, style.TRUCK_FLOOR_COLOR, Z_TRUCK_FLOOR))
 
-def draw_truck_wireframe(ax: Axes, truck_dims: tuple[int, int, int]) -> None:
+def draw_truck_wireframe(ax: Axes, state: State) -> None:
     # Rusuk belakang digambar di bawah package, rusuk depan di atasnya.
-    corners = {
-        key: tuple(unit * size for unit, size in zip(unit_corner, truck_dims))
-        for key, unit_corner in TRUCK_CORNERS.items()
-    }
-    center = tuple(size / 2 for size in truck_dims)
-    center_depth = _depth(center)
+    for bx0, by0, bz0, bx1, by1, bz1 in state.truckBoundsList():
+        truck_dims = (bx1 - bx0, by1 - by0, bz1 - bz0)
+        origin = (bx0, by0, bz0)
+        corners = {
+            key: tuple(o + unit * size for o, unit, size in zip(origin, unit_corner, truck_dims))
+            for key, unit_corner in TRUCK_CORNERS.items()
+        }
+        center = tuple(o + size / 2 for o, size in zip(origin, truck_dims))
+        center_depth = _depth(center)
 
-    for start_key, end_key in TRUCK_EDGES:
-        start, end = corners[start_key], corners[end_key]
-        midpoint = tuple((s + e) / 2 for s, e in zip(start, end))
-        is_front = _depth(midpoint) > center_depth
+        for start_key, end_key in TRUCK_EDGES:
+            start, end = corners[start_key], corners[end_key]
+            midpoint = tuple((s + e) / 2 for s, e in zip(start, end))
+            is_front = _depth(midpoint) > center_depth
 
-        ax.plot(
-            [start[0], end[0]],
-            [start[1], end[1]],
-            [start[2], end[2]],
-            linewidth=style.TRUCK_EDGE_WIDTH,
+            ax.plot(
+                [start[0], end[0]],
+                [start[1], end[1]],
+                [start[2], end[2]],
+                linewidth=style.TRUCK_EDGE_WIDTH,
+                color=style.TRUCK_EDGE_COLOR,
+                alpha=0.8,
+                zorder=Z_FRONT_EDGES if is_front else Z_BACK_EDGES,
+            )
+
+def draw_truck_labels(ax: Axes, state: State) -> None:
+    # Penanda "T1", "T2", ... di atas tiap truck (hanya bila armada > 1 truck)
+    if len(state.trucks) < 2:
+        return
+
+    for index, truck in enumerate(state.trucks):
+        bx0, by0, bz0, bx1, by1, bz1 = state.truckBounds(index)
+        ax.text(
+            (bx0 + bx1) / 2, by0, bz1 + style.LABEL_OFFSET_Z * 2,
+            truck.id,
+            ha="center",
+            va="bottom",
+            fontsize=style.LABEL_FONT_SIZE + 2,
+            fontweight="bold",
             color=style.TRUCK_EDGE_COLOR,
-            alpha=0.8,
-            zorder=Z_FRONT_EDGES if is_front else Z_BACK_EDGES,
+            zorder=Z_LABELS,
         )
 
 def package_label(state: State, package: Package) -> str:
@@ -160,8 +181,9 @@ def draw_state_3d(
     # Menggambar satu State lengkap pada Axes 3D.
     ax.computed_zorder = False
 
-    draw_floor(ax, state.truck.dimPeti, bounds)
-    draw_truck_wireframe(ax, state.truck.dimPeti)
+    draw_floor(ax, state, bounds)
+    draw_truck_wireframe(ax, state)
+    draw_truck_labels(ax, state)
 
     packages = placed_packages(state, show_outside=show_outside)
     packages.sort(key=lambda package: _depth(_package_center(state, package)))

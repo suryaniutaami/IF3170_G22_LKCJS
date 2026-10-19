@@ -19,8 +19,8 @@ def placed_packages(state: State, *, show_outside: bool = True) -> list[Package]
     ]
 
 def state_bounds(state: State) -> Bounds3D:
-    # Batas visual agar truck dan package di luar truck tetap terlihat.
-    truck_w, truck_d, truck_h = state.truck.dimPeti
+    # Batas visual agar truck dan package di luar truck tetap terlihat
+    truck_w, truck_d, truck_h = state.extent   # bounding box seluruh armada
 
     min_x = min_y = min_z = 0.0
     max_x, max_y, max_z = float(truck_w), float(truck_d), float(truck_h)
