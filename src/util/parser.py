@@ -2,15 +2,19 @@
 # jumlah_paket 
 # (id width depth height [x y z] value weight isFragile eta)
 # ...
-# widthPeti depthPeti heightPeti maxCapacity
+# [id] widthPeti depthPeti heightPeti maxCapacity     <- satu baris per truk, minimal satu
+#
+# Multi-truk: tulis satu baris truk per truk (id opsional, default T1, T2, ...).
+# Setiap truk punya dimensi dan kapasitas sendiri.
 
+import copy
 from core.entity import Package, Truck
 from util.fileHelper import FileHelper
 
 class Parser:
 
     @staticmethod
-    def parse(path: str) -> tuple[list[Package], Truck]:
+    def parse(path: str, n_trucks: int | None = None) -> tuple[list[Package], list[Truck]]:
         lines = FileHelper.readAllLines(path)
         idx = 0
 
@@ -57,12 +61,43 @@ class Parser:
             packages.append(package)
             idx += 1
 
-        # Truck
-        parts = lines[idx].split()
+        # Truck: setiap sisa baris adalah satu truk
+        trucks = []
+        for line in lines[idx:]:
+            parts = line.split()
 
-        dimPeti = (int(parts[0]), int(parts[1]), int(parts[2]))
-        maxCapacity = float(parts[3])
+            if len(parts) == 4:
+                truck_id = f"T{len(trucks) + 1}"
+            elif len(parts) == 5:
+                truck_id, parts = parts[0], parts[1:]
+            else:
+                raise ValueError(f"Format truck tidak valid: {line}")
 
-        truck = Truck(dimPeti, maxCapacity)
+            dimPeti = (int(parts[0]), int(parts[1]), int(parts[2]))
+            maxCapacity = float(parts[3])
+            trucks.append(Truck(dimPeti, maxCapacity, truck_id))
 
-        return packages, truck
+        if not trucks:
+            raise ValueError("Input harus memuat minimal satu truk.")
+
+        trucks = Parser._apply_truck_count(trucks, n_trucks)
+
+        return packages, trucks
+
+    @staticmethod
+    def _apply_truck_count(trucks: list[Truck], n_trucks: int | None) -> list[Truck]:
+        if n_trucks is None or n_trucks == len(trucks):
+            return trucks
+        if n_trucks < 1:
+            raise ValueError("Jumlah truk minimal 1.")
+        if len(trucks) != 1:
+            raise ValueError(
+                f"File mendefinisikan {len(trucks)} truk, tetapi diminta {n_trucks}. "
+                "Gandakan truk hanya jika file memuat tepat satu truk."
+            )
+
+        template = trucks[0]
+        return [
+            Truck(template.dimPeti, template.maxCapacity, f"T{i + 1}")
+            for i in range(n_trucks)
+        ]

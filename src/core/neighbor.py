@@ -63,8 +63,15 @@ class Neighbor:
         if state.positions[package_id] == new_position:
             return None
 
+        return Neighbor._try_move(state, Neighbor._get_package(state, package_id), new_position)
+
+    @staticmethod
+    def _try_move(state: State, package, new_position: tuple[int, int, int], others=None):
+        if not state.canPlace(package, new_position, others):
+            return None
+
         neighbor = Neighbor.clone(state)
-        neighbor.positions[package_id] = new_position
+        neighbor.positions[package.id] = new_position
 
         return neighbor if neighbor.isValid() else None
 
@@ -136,33 +143,45 @@ class Neighbor:
     def iter_move_neighbors(state: State) -> Iterator[State]:
         """
         Menghasilkan seluruh valid neighbor dari operasi pindah koordinat.
-        Batas koordinat mengikuti StateHelper.randomize() saat ini:
-        x = 0 .. truck_width  + package_width
-        y = 0 .. truck_depth  + package_depth
-        z = 0 .. truck_height + package_height
+        Batas koordinat mengikuti StateHelper.randomize(), terhadap bounding box
+        armada (state.extent; untuk satu truk sama dengan dimensi truk):
+        x = 0 .. extent_width  + package_width
+        y = 0 .. extent_depth  + package_depth
+        z = 0 .. extent_height + package_height
+
+        Koordinat z hanya diuji pada ketinggian yang mungkin punya penyangga
+        (lantai z=0 atau bagian atas paket lain). Ketinggian lain pasti
+        'melayang', sehingga himpunan neighbor yang dihasilkan tidak berubah.
         """
-        truck_w, truck_d, truck_h = state.truck.dimPeti
+        extent_w, extent_d, extent_h = state.extent
 
         for package in state.packages:
             package_w, package_d, package_h = state.getDimOri(package)
             current_position = state.getPosition(package)
 
-            max_x = truck_w + package_w
-            max_y = truck_d + package_d
-            max_z = truck_h + package_h
+            max_x = extent_w + package_w
+            max_y = extent_d + package_d
+            max_z = extent_h + package_h
+
+            others = state.otherBoxes(package)
+            support_heights = {0}
+            for _, _, _, other_z, _, _, other_h in others:
+                if other_z + other_h <= max_z:
+                    support_heights.add(other_z + other_h)
 
             for x in range(max_x + 1):
                 for y in range(max_y + 1):
-                    for z in range(max_z + 1):
+                    for z in sorted(support_heights):
                         new_position = (x, y, z)
 
                         if new_position == current_position:
                             continue
 
-                        candidate = Neighbor.move(
+                        candidate = Neighbor._try_move(
                             state,
-                            package.id,
-                            new_position
+                            package,
+                            new_position,
+                            others
                         )
 
                         if candidate is not None:
@@ -199,7 +218,7 @@ class Neighbor:
         if len(state.packages) >= 2:
             operations.append("swap")
 
-        truck_w, truck_d, truck_h = state.truck.dimPeti
+        truck_w, truck_d, truck_h = state.extent
 
         for _ in range(max_attempts):
             operation = rng.choice(operations)

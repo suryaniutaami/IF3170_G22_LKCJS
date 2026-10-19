@@ -9,8 +9,9 @@ class Package:
         self.eta = eta
 
 class Truck:
-    def __init__(self, dim: tuple[int, int, int], maxCapacity: float):
+    def __init__(self, dim: tuple[int, int, int], maxCapacity: float, id: str | None = None):
         self.dimPeti = dim  #(w, d, h) = (3, 4, 1}
         self.maxCapacity = maxCapacity
-
-    
+        # Identitas truk (mis. "T1"). Opsional agar kode single-truck lama tetap berjalan
+        # State mengisi id otomatis ("T1", "T2", ...) jika kosong
+        self.id = id
