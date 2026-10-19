@@ -18,6 +18,7 @@ RUNS_PER_CONFIGURATION = 3
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Eksperimen Genetic Algorithm untuk populasi dan jumlah generasi.")
     parser.add_argument("--input", default="input.txt", help="Nama file input di folder input/")
+    parser.add_argument("--trucks", type=int, default=None, help="Gandakan truk tunggal pada file menjadi N truk")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Path file JSON hasil")
     parser.add_argument("--seed", type=int, default=0, help="Seed dasar eksperimen")
     parser.add_argument("--population-control", type=int, default=20, help="Populasi tetap saat menguji variasi jumlah generasi")
@@ -27,8 +28,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_configuration(packages, truck, *, population: int, generations: int, seed: int, experiment: str) -> dict[str, Any]:
-    initial_state = State(packages, truck, random.Random(seed))
+def run_configuration(packages, trucks, *, population: int, generations: int, seed: int, experiment: str) -> dict[str, Any]:
+    initial_state = State(packages, trucks, random.Random(seed))
     result = GeneticAlgorithm(nPopulation=population, nGeneration=generations, seed=seed).run(initial_state)
 
     return {
@@ -65,19 +66,23 @@ def main() -> None:
     if any(generations < 0 for generations in args.generation_variations):
         raise ValueError("Jumlah generasi tidak boleh negatif.")
 
-    packages, truck = Parser.parse(args.input)
+    packages, trucks = Parser.parse(args.input, args.trucks)
+    if len(trucks) > 1 and args.output == DEFAULT_OUTPUT:
+        # Hasil multi-truk diberi akhiran agar tidak menimpa hasil single-truck
+        args.output = DEFAULT_OUTPUT.with_name(f"genetic_algorithm_experiments_{len(trucks)}trucks.json")
+    print(f"Jumlah truk: {len(trucks)}")
     seed_rng = random.Random(args.seed)
     runs: list[dict[str, Any]] = []
 
     for generations in args.generation_variations:
         for _ in range(RUNS_PER_CONFIGURATION):
-            run = run_configuration(packages, truck, population=args.population_control, generations=generations, seed=seed_rng.randrange(2**32), experiment="fixed_population")
+            run = run_configuration(packages, trucks, population=args.population_control, generations=generations, seed=seed_rng.randrange(2**32), experiment="fixed_population")
             runs.append(run)
             print_result(len(runs), run)
 
     for population in args.population_variations:
         for _ in range(RUNS_PER_CONFIGURATION):
-            run = run_configuration(packages, truck, population=population, generations=args.generation_control, seed=seed_rng.randrange(2**32), experiment="fixed_generations")
+            run = run_configuration(packages, trucks, population=population, generations=args.generation_control, seed=seed_rng.randrange(2**32), experiment="fixed_generations")
             runs.append(run)
             print_result(len(runs), run)
 

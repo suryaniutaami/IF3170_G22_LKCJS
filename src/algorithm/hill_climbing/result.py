@@ -7,27 +7,48 @@ def snapshot_state(state: State) -> dict[str, Any]:
     #Mengubah State menjadi struktur sederhana yang siap diserialisasi.
     packages = []
     for package in state.packages:
+        truck_index = state.getTruckIndex(package)
+        local_position = state.localPosition(package)
         packages.append(
             {
                 "id": package.id,
                 "position": list(state.positions[package.id]),
+                "local_position": None if local_position is None else list(local_position),
                 "orientation": list(package.orientation),
                 "oriented_dimensions": list(state.getDimOri(package)),
                 "value": package.value,
                 "weight": package.weight,
                 "is_fragile": package.isFragile,
                 "eta": package.eta,
-                "inside_truck": state.isInsidePeti(package),
+                "inside_truck": truck_index is not None,
+                "truck": None if truck_index is None else state.trucks[truck_index].id,
+            }
+        )
+
+    trucks = []
+    for index, truck in enumerate(state.trucks):
+        trucks.append(
+            {
+                "id": truck.id,
+                "origin": list(state.truckOrigin(index)),
+                "dimensions": list(truck.dimPeti),
+                "max_capacity": truck.maxCapacity,
+                "value": state.getTruckValue(index),
+                "weight": state.getTruckWeight(index),
+                "packages": [p.id for p in state.getTruckPackages(index)],
             }
         )
 
     return {
         "value": state.getValue(),
         "valid": state.isValid(),
+        # "truck" = truk pertama (kompatibel dengan format single-truck);
+        # seluruh armada ada di "trucks".
         "truck": {
             "dimensions": list(state.truck.dimPeti),
             "max_capacity": state.truck.maxCapacity,
         },
+        "trucks": trucks,
         "packages": packages,
     }
 

@@ -1,3 +1,4 @@
+import argparse
 import json
 import random
 from pathlib import Path
@@ -8,6 +9,13 @@ from util.parser import Parser
 
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output"
 N_RUNS = 3
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Eksperimen Simulated Annealing (3 run)")
+    parser.add_argument("--input", default="input.txt", help="Nama file di folder input/ (mis. input_multi.txt)")
+    parser.add_argument("--trucks", type=int, default=None, help="Gandakan truk tunggal pada file menjadi N truk")
+    return parser.parse_args()
 
 
 def print_result(run_no, result):
@@ -25,7 +33,7 @@ def print_result(run_no, result):
     print(f"Duration             : {result.duration_seconds:.6f} s")
 
 
-def save_plots(run_no, result):
+def save_plots(run_no, result, suffix=""):
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -49,20 +57,24 @@ def save_plots(run_no, result):
     ax2.grid(alpha=0.3)
 
     fig.tight_layout()
-    path = OUTPUT_DIR / f"sa_run{run_no}.png"
+    path = OUTPUT_DIR / f"sa_run{run_no}{suffix}.png"
     fig.savefig(path, dpi=150)
     plt.close(fig)
     print(f"Plot disimpan: {path}")
 
 
 def main():
+    args = parse_args()
     OUTPUT_DIR.mkdir(exist_ok=True)
-    packages, truck = Parser.parse("input.txt")
+    packages, trucks = Parser.parse(args.input, args.trucks)
     rng = random.Random()
+    # Hasil multi-truk diberi akhiran agar tidak menimpa hasil single-truck.
+    suffix = f"_{len(trucks)}trucks" if len(trucks) > 1 else ""
+    print(f"Jumlah truk: {len(trucks)}")
 
     summaries = []
     for run_no in range(1, N_RUNS + 1):
-        initial_state = State(packages, truck, rng)  # initial state random baru tiap run
+        initial_state = State(packages, trucks, rng)  # initial state random baru tiap run
         algorithm = SimulatedAnnealing(
             initial_temperature=100.0,
             cooling_rate=0.99,
@@ -73,9 +85,9 @@ def main():
         result = algorithm.run(initial_state)
 
         print_result(run_no, result)
-        save_plots(run_no, result)
+        save_plots(run_no, result, suffix)
 
-        with open(OUTPUT_DIR / f"sa_run{run_no}.json", "w", encoding="utf-8") as f:
+        with open(OUTPUT_DIR / f"sa_run{run_no}{suffix}.json", "w", encoding="utf-8") as f:
             json.dump(result.to_dict(), f, indent=2)
 
         summaries.append(

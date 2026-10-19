@@ -4,8 +4,9 @@ from core.state import State
 from core.neighbor import Neighbor
 
 
-packages, truck = Parser.parse("input.txt")
-state = State(packages, truck, random.Random())
+packages, trucks = Parser.parse("input.txt")
+truck = trucks[0]
+state = State(packages, trucks, random.Random())
 
 print("=== INITIAL STATE ===")
 print("Positions:", state.positions)

@@ -1,5 +1,6 @@
 # Demo sederhana untuk menjalankan seluruh varian Hill-Climbing.
 
+import argparse
 import random
 from algorithm.hill_climbing import (
     RandomRestartHillClimbing,
@@ -25,9 +26,18 @@ def print_result(result):
         print(f"Metadata      : {result.metadata}")
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Demo seluruh varian Hill-Climbing")
+    parser.add_argument("--input", default="input.txt", help="Nama file di folder input/ (mis. input_multi.txt)")
+    parser.add_argument("--trucks", type=int, default=None, help="Gandakan truk tunggal pada file menjadi N truk")
+    return parser.parse_args()
+
+
 def main():
-    packages, truck = Parser.parse("input.txt")
-    initial_state = State(packages, truck, random.Random())
+    args = parse_args()
+    packages, trucks = Parser.parse(args.input, args.trucks)
+    initial_state = State(packages, trucks, random.Random())
+    print(f"Jumlah truk: {len(trucks)}")
 
     algorithms = [
         SteepestAscentHillClimbing(seed=42),
