@@ -119,8 +119,6 @@ def get_input_name(value: str | None) -> str:
 
 
 def load_input(filename: str, n_trucks: int | None):
-    # Parser lama membaca ../input relatif terhadap cwd; jadikan entry point ini
-    # dapat dipanggil baik dari root proyek maupun dari folder src/.
     previous_cwd = Path.cwd()
     try:
         os.chdir(SRC_DIR)
@@ -165,8 +163,7 @@ def calibrate_initial_temperature(
             losses.append(loss)
 
     if not losses:
-        # If sampling finds no downhill move, estimate a typical loss using
-        # package values. For one typical loss L, exp(-L / T) = target_acceptance.
+        # Jika tidak ada downhill move, estimasi loss dengan nilai paket
         typical_loss = sum(abs(package.value) for package in state.packages) / max(1, len(state.packages))
         fallback = typical_loss / -math.log(target_acceptance) if typical_loss else 1.0
         fallback = max(fallback, min_temperature * 1.01)
@@ -212,7 +209,7 @@ def build_algorithm(args: argparse.Namespace, name: str, seed: int, initial_stat
             limit = args.max_sideways if args.max_sideways is not None else ask_int("Batas sideways move", 10)
             return SidewaysMoveHillClimbing(max_sideways=limit, seed=seed)
         if variant == "stochastic":
-            # Selaras dengan run_hill_climbing.py; run_visualization.py
+            # Selaras dengan run_hill_climbing.py dan run_visualization.py
             # memakai default terpisah sebesar 1000.
             limit = args.max_iterations if args.max_iterations is not None else ask_int("Batas iterasi", 100)
             attempts = args.max_neighbor_attempts if args.max_neighbor_attempts is not None else ask_int("Percobaan maksimum mencari neighbor valid", 100)
@@ -222,8 +219,6 @@ def build_algorithm(args: argparse.Namespace, name: str, seed: int, initial_stat
         return RandomRestartHillClimbing(max_restarts=limit, target_value=target, seed=seed)
 
     if name == "simulated_annealing":
-        # Keep the interactive prompt focused; advanced values remain available
-        # as CLI options and otherwise use the algorithm's standard settings.
         min_temperature = args.min_temperature if args.min_temperature is not None else 0.001
         cooling_rate = args.cooling_rate if args.cooling_rate is not None else 0.99
         max_iterations = args.max_iterations if args.max_iterations is not None else ask_int("Batas iterasi", 5000)
