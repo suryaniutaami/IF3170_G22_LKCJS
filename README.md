@@ -122,7 +122,7 @@ python run_visualization.py --algorithm steepest --input input_multi.txt
 ```
 
 - `run_hill_climbing.py` menjalankan keempat varian Hill Climbing dan mencetak ringkasan ke terminal.
-- `run_simulated_annealing.py` menjalankan tiga run, menyimpan JSON dan plot PNG di `output/`.
+- `run_simulated_annealing.py` menjalankan tiga run dengan seed berurutan (default mulai dari 42), mengkalibrasi suhu awal seperti `main.py`, lalu menyimpan JSON dan plot PNG dengan nama yang menyertakan input dan seed. Gunakan `--seed` untuk mengatur seed awal.
 - `run_genetic_algorithm.py` menjalankan eksperimen beberapa variasi populasi dan generasi, lalu menyimpan hasil JSON di `output/`.
 - `run_visualization.py` menjalankan algoritma yang dipilih dan menampilkan visualisasi. Gunakan `--no-show` untuk hanya menyimpan gambar.
 - `run_visual_scenarios.py` merender skenario visualisasi bawaan, bukan membaca file input.
