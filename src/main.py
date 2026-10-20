@@ -17,12 +17,12 @@ from algorithm.hill_climbing import (
 from algorithm.simulated_annealing import SimulatedAnnealing
 from core.neighbor import Neighbor
 from core.state import State
+from util.outputHelper import OutputHelper
 from util.parser import Parser
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SRC_DIR = Path(__file__).resolve().parent
 INPUT_DIR = ROOT_DIR / "input"
-OUTPUT_DIR = ROOT_DIR / "output"
 
 ALGORITHMS = {
     "hill_climbing": "Hill Climbing",
@@ -265,14 +265,15 @@ def build_algorithm(args: argparse.Namespace, name: str, seed: int, initial_stat
     return GeneticAlgorithm(nPopulation=population, nGeneration=generations, seed=seed)
 
 
-def output_path(name: str | None, algorithm: str, trucks: int) -> Path:
+def output_filename(name: str | None, algorithm: str, trucks: int) -> str:
+    # Hanya nama file; folder ditentukan OutputHelper berdasarkan algoritma/varian setelah run.
     suffix = f"_{trucks}trucks" if trucks > 1 else ""
     default_name = f"{algorithm}{suffix}.json"
     filename = ask("Nama file output JSON", default_name) if name is None else name
     filename = Path(filename).name
     if not filename.endswith(".json"):
         filename += ".json"
-    return OUTPUT_DIR / filename
+    return filename
 
 
 def main() -> None:
@@ -283,9 +284,10 @@ def main() -> None:
     packages, trucks = load_input(input_name, args.trucks)
     initial_state = State(packages, trucks, random.Random(seed))
     algorithm = build_algorithm(args, algorithm_name, seed, initial_state)
-    path = output_path(args.output, algorithm_name, len(trucks))
+    filename = output_filename(args.output, algorithm_name, len(trucks))
     result = algorithm.run(initial_state)
 
+    path = OutputHelper.resultDir(result.algorithm) / filename
     path.parent.mkdir(parents=True, exist_ok=True)
     result_data = result.to_dict()
     if algorithm_name == "simulated_annealing":
@@ -311,11 +313,12 @@ def main() -> None:
     if show_visualization:
         from visualization import plot_history, visualize_result
 
-        image_path = OUTPUT_DIR / "visualization" / f"{path.stem}.png"
+        visualization_dir = OutputHelper.visualizationDir(result.algorithm)
+        image_path = visualization_dir / f"{path.stem}.png"
         visualize_result(result, show=True, save_path=image_path)
         print(f"Visualisasi disimpan: {image_path}")
 
-        history_path = OUTPUT_DIR / "visualization" / f"{path.stem}_history.png"
+        history_path = visualization_dir / f"{path.stem}_history.png"
         plot_history(result, show=True, save_path=history_path)
         print(f"Plot riwayat nilai disimpan: {history_path}")
 

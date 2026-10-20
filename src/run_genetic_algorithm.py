@@ -8,10 +8,12 @@ from typing import Any
 
 from algorithm.genetic_algorithm.genetic_algorithm import GeneticAlgorithm
 from core.state import State
+from util.outputHelper import OutputHelper
 from util.parser import Parser
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT_DIR / "output" / "genetic_algorithm_experiments.json"
+# JSON di output/genetic_algorithm/, plot di output/visualization/genetic_algorithm/.
+DEFAULT_OUTPUT = OutputHelper.resultDir("genetic_algorithm") / "genetic_algorithm_experiments.json"
+PLOT_DIR = OutputHelper.visualizationDir("genetic_algorithm")
 RUNS_PER_CONFIGURATION = 3
 
 
@@ -91,8 +93,8 @@ def main() -> None:
     print(f"Jumlah truk: {len(trucks)}")
     seed_rng = random.Random(args.seed)
     runs: list[dict[str, Any]] = []
-    # Plot tiap run disimpan di output/visualization/ga/, akhiran truk mengikuti nama file JSON.
-    plot_dir = ROOT_DIR / "output" / "visualization" / "ga"
+    # Plot tiap run disimpan di output/visualization/genetic_algorithm/, akhiran truk mengikuti nama file JSON.
+    plot_dir = PLOT_DIR
     suffix = f"_{len(trucks)}trucks" if len(trucks) > 1 else ""
 
     for generations in args.generation_variations:

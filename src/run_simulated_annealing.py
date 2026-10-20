@@ -6,9 +6,12 @@ from pathlib import Path
 from algorithm.simulated_annealing import SimulatedAnnealing
 from core.state import State
 from main import calibrate_initial_temperature
+from util.outputHelper import OutputHelper
 from util.parser import Parser
 
-OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output"
+# JSON di output/simulated_annealing/, plot di output/visualization/simulated_annealing/.
+OUTPUT_DIR = OutputHelper.resultDir("simulated_annealing")
+PLOT_DIR = OutputHelper.visualizationDir("simulated_annealing")
 N_RUNS = 3
 
 
@@ -59,7 +62,8 @@ def save_plots(run_no, result, suffix=""):
     ax2.grid(alpha=0.3)
 
     fig.tight_layout()
-    path = OUTPUT_DIR / f"sa_run{run_no}{suffix}.png"
+    PLOT_DIR.mkdir(parents=True, exist_ok=True)
+    path = PLOT_DIR / f"sa_run{run_no}{suffix}.png"
     fig.savefig(path, dpi=150)
     plt.close(fig)
     print(f"Plot disimpan: {path}")
@@ -67,7 +71,7 @@ def save_plots(run_no, result, suffix=""):
 
 def main():
     args = parse_args()
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     packages, trucks = Parser.parse(args.input, args.trucks)
     input_stem = Path(args.input).stem
     truck_suffix = f"_{len(trucks)}trucks" if len(trucks) > 1 else ""

@@ -15,10 +15,9 @@ from algorithm.hill_climbing import (
 from algorithm.genetic_algorithm.genetic_algorithm import GeneticAlgorithm
 from algorithm.simulated_annealing import SimulatedAnnealing
 from core.state import State
+from util.outputHelper import OutputHelper
 from util.parser import Parser
 from visualization import visualize_result
-
-OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output" / "visualization"
 
 # Tambahkan algoritma baru (mis. simulated annealing) cukup di registry ini.
 ALGORITHMS = {
@@ -58,13 +57,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hide-outside", action="store_true", help="Sembunyikan package di luar truck")
     return parser.parse_args()
 
-def resolve_save_path(args: argparse.Namespace, n_trucks: int = 1) -> Path | None:
+def resolve_save_path(args: argparse.Namespace, algorithm: str, n_trucks: int = 1) -> Path | None:
     if args.no_save:
         return None
     if args.save:
         return Path(args.save)
+    # Folder mengikuti result.algorithm, mis. output/visualization/hill_climbing/sideways_move/.
     suffix = f"_{n_trucks}trucks" if n_trucks > 1 else ""
-    return OUTPUT_DIR / f"{args.algorithm}_seed{args.seed}{suffix}.png"
+    return OutputHelper.visualizationDir(algorithm) / f"{args.algorithm}_seed{args.seed}{suffix}.png"
 
 def main() -> None:
     args = parse_args()
@@ -75,7 +75,7 @@ def main() -> None:
     initial_state = State(packages, trucks, rng)
 
     result = ALGORITHMS[args.algorithm](args).run(initial_state)
-    save_path = resolve_save_path(args, len(trucks))
+    save_path = resolve_save_path(args, result.algorithm, len(trucks))
 
     print("=== VISUALIZATION ===")
     print(f"Algorithm     : {result.algorithm}")
