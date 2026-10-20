@@ -13,7 +13,7 @@ class SimulatedAnnealing:
     def __init__(
         self,
         initial_temperature: float = 100.0,
-        cooling_rate: float = 0.99,
+        cooling_rate: float = 0.999,
         min_temperature: float = 1e-3,
         max_iterations: int = 5000,
         max_neighbor_attempts: int = 100,
