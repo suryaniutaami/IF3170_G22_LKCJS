@@ -24,6 +24,9 @@ class GeneticAlgorithm:
     
     @staticmethod
     def _random_roulette(population: list[State], nPopulation: int, sumValue: int, rng) -> State:
+        if sumValue == 0:
+            return rng.choice(population)
+
         selectedState: State
         rr = rng.randint(0,100) #random pick
 
@@ -187,9 +190,10 @@ class GeneticAlgorithm:
         value_history: list[float] = []
         average_value_history: list[float] = []
         count_package_individual = len(population[0].packages)
+        best_initial_state = max(population, key=lambda state: state.getValue())
 
         ## catat statistik populasi awal
-        value_history.append(max(st.getValue() for st in population))
+        value_history.append(best_initial_state.getValue())
         average_value_history.append(sum(st.getValue() for st in population) / len(population))
 
         # jalanin GA untuk satu generasi: selection, crossover, mutation
@@ -217,7 +221,7 @@ class GeneticAlgorithm:
         
         return GeneticAlgorithmResult(
             algorithm = "genetic_algorithm",
-            initial_state = initial_state,
+            initial_state = best_initial_state,
             final_state = finalState,
             accepted_moves = 0,
             iterations=iterations,
@@ -234,6 +238,10 @@ class GeneticAlgorithm:
                 "best_value_seen": max(value_history),
                 "count_package_individual": count_package_individual,
                 "random_position_used": self.random_position_used,
-                "random_position_rate": self.random_position_used/(self.nPopulation*count_package_individual*iterations)
+                "random_position_rate": (
+                    self.random_position_used / (self.nPopulation * count_package_individual * iterations)
+                    if iterations > 0
+                    else 0
+                ),
             },
         )
