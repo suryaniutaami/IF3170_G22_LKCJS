@@ -30,19 +30,25 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def save_history_plot(result, plot_path: Path) -> None:
+def save_plots(result, plot_path: Path) -> None:
+    # Pola nama sama dengan main.py: <nama>.png untuk state awal/akhir, <nama>_history.png untuk riwayat nilai.
     try:
         import matplotlib
         matplotlib.use("Agg")
-        from visualization import plot_history
+        from visualization import plot_history, visualize_result
     except ImportError:
         print("matplotlib tidak terpasang, plot dilewati (pip install matplotlib).")
         return
 
     import matplotlib.pyplot as plt
-    fig = plot_history(result, show=False, save_path=plot_path)
+    fig, _ = visualize_result(result, show=False, save_path=plot_path)
     plt.close(fig)
-    print(f"Plot disimpan: {plot_path}")
+    print(f"Visualisasi state disimpan: {plot_path}")
+
+    history_path = plot_path.with_name(f"{plot_path.stem}_history.png")
+    fig = plot_history(result, show=False, save_path=history_path)
+    plt.close(fig)
+    print(f"Plot riwayat nilai disimpan: {history_path}")
 
 
 def run_configuration(packages, trucks, *, population: int, generations: int, seed: int, experiment: str, plot_path: Path | None = None) -> dict[str, Any]:
@@ -50,7 +56,7 @@ def run_configuration(packages, trucks, *, population: int, generations: int, se
     result = GeneticAlgorithm(nPopulation=population, nGeneration=generations, seed=seed).run(initial_state)
 
     if plot_path is not None:
-        save_history_plot(result, plot_path)
+        save_plots(result, plot_path)
 
     return {
         "experiment": experiment,
