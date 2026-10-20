@@ -28,9 +28,27 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_configuration(packages, trucks, *, population: int, generations: int, seed: int, experiment: str) -> dict[str, Any]:
+def save_history_plot(result, plot_path: Path) -> None:
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        from visualization import plot_history
+    except ImportError:
+        print("matplotlib tidak terpasang, plot dilewati (pip install matplotlib).")
+        return
+
+    import matplotlib.pyplot as plt
+    fig = plot_history(result, show=False, save_path=plot_path)
+    plt.close(fig)
+    print(f"Plot disimpan: {plot_path}")
+
+
+def run_configuration(packages, trucks, *, population: int, generations: int, seed: int, experiment: str, plot_path: Path | None = None) -> dict[str, Any]:
     initial_state = State(packages, trucks, random.Random(seed))
     result = GeneticAlgorithm(nPopulation=population, nGeneration=generations, seed=seed).run(initial_state)
+
+    if plot_path is not None:
+        save_history_plot(result, plot_path)
 
     return {
         "experiment": experiment,
@@ -73,16 +91,21 @@ def main() -> None:
     print(f"Jumlah truk: {len(trucks)}")
     seed_rng = random.Random(args.seed)
     runs: list[dict[str, Any]] = []
+    # Plot tiap run disimpan di output/visualization/ga/, akhiran truk mengikuti nama file JSON.
+    plot_dir = ROOT_DIR / "output" / "visualization" / "ga"
+    suffix = f"_{len(trucks)}trucks" if len(trucks) > 1 else ""
 
     for generations in args.generation_variations:
-        for _ in range(RUNS_PER_CONFIGURATION):
-            run = run_configuration(packages, trucks, population=args.population_control, generations=generations, seed=seed_rng.randrange(2**32), experiment="fixed_population")
+        for run_index in range(1, RUNS_PER_CONFIGURATION + 1):
+            plot_path = plot_dir / f"fixed_population_pop{args.population_control}_gen{generations}_run{run_index}{suffix}.png"
+            run = run_configuration(packages, trucks, population=args.population_control, generations=generations, seed=seed_rng.randrange(2**32), experiment="fixed_population", plot_path=plot_path)
             runs.append(run)
             print_result(len(runs), run)
 
     for population in args.population_variations:
-        for _ in range(RUNS_PER_CONFIGURATION):
-            run = run_configuration(packages, trucks, population=population, generations=args.generation_control, seed=seed_rng.randrange(2**32), experiment="fixed_generations")
+        for run_index in range(1, RUNS_PER_CONFIGURATION + 1):
+            plot_path = plot_dir / f"fixed_generations_pop{population}_gen{args.generation_control}_run{run_index}{suffix}.png"
+            run = run_configuration(packages, trucks, population=population, generations=args.generation_control, seed=seed_rng.randrange(2**32), experiment="fixed_generations", plot_path=plot_path)
             runs.append(run)
             print_result(len(runs), run)
 

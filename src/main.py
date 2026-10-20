@@ -310,11 +310,15 @@ def main() -> None:
         show_visualization = answer in {"y", "yes", "ya"}
 
     if show_visualization:
-        from visualization import visualize_result
+        from visualization import plot_history, visualize_result
 
         image_path = OUTPUT_DIR / "visualization" / f"{path.stem}.png"
         visualize_result(result, show=True, save_path=image_path)
         print(f"Visualisasi disimpan: {image_path}")
+
+        history_path = OUTPUT_DIR / "visualization" / f"{path.stem}_history.png"
+        plot_history(result, show=True, save_path=history_path)
+        print(f"Plot riwayat nilai disimpan: {history_path}")
 
 
 if __name__ == "__main__":
