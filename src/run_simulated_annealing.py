@@ -5,6 +5,7 @@ from pathlib import Path
 
 from algorithm.simulated_annealing import SimulatedAnnealing
 from core.state import State
+from main import calibrate_initial_temperature
 from util.parser import Parser
 
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output"
@@ -13,8 +14,9 @@ N_RUNS = 3
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Eksperimen Simulated Annealing (3 run)")
-    parser.add_argument("--input", default="input.txt", help="Nama file di folder input/ (mis. input_multi.txt)")
+    parser.add_argument("--input", default="input2.txt", help="Nama file di folder input/ (mis. input_multi.txt)")
     parser.add_argument("--trucks", type=int, default=None, help="Gandakan truk tunggal pada file menjadi N truk")
+    parser.add_argument("--seed", type=int, default=42, help="Seed awal; tiap run memakai seed berurutan (default: 42)")
     return parser.parse_args()
 
 
@@ -67,28 +69,42 @@ def main():
     args = parse_args()
     OUTPUT_DIR.mkdir(exist_ok=True)
     packages, trucks = Parser.parse(args.input, args.trucks)
-    rng = random.Random()
-    # Hasil multi-truk diberi akhiran agar tidak menimpa hasil single-truck.
-    suffix = f"_{len(trucks)}trucks" if len(trucks) > 1 else ""
+    input_stem = Path(args.input).stem
+    truck_suffix = f"_{len(trucks)}trucks" if len(trucks) > 1 else ""
+    suffix = f"_{input_stem}{truck_suffix}_seed{args.seed}"
     print(f"Jumlah truk: {len(trucks)}")
 
     summaries = []
     for run_no in range(1, N_RUNS + 1):
-        initial_state = State(packages, trucks, rng)  # initial state random baru tiap run
+        run_seed = args.seed + run_no - 1
+        initial_state = State(packages, trucks, random.Random(run_seed))
+        initial_temperature, calibration = calibrate_initial_temperature(
+            initial_state,
+            target_acceptance=0.9,
+            sample_size=100,
+            max_neighbor_attempts=100,
+            min_temperature=1e-3,
+            seed=run_seed,
+        )
+        print(f"Seed run {run_no}: {run_seed}; suhu awal terkalibrasi: {initial_temperature:.6g}")
         algorithm = SimulatedAnnealing(
-            initial_temperature=100.0,
+            initial_temperature=initial_temperature,
             cooling_rate=0.99,
             min_temperature=1e-3,
             max_iterations=5000,
             stuck_threshold=20,
+            max_neighbor_attempts=100,
+            seed=run_seed,
         )
         result = algorithm.run(initial_state)
 
         print_result(run_no, result)
         save_plots(run_no, result, suffix)
 
+        result_data = result.to_dict()
+        result_data["parameters"]["temperature_calibration"] = calibration
         with open(OUTPUT_DIR / f"sa_run{run_no}{suffix}.json", "w", encoding="utf-8") as f:
-            json.dump(result.to_dict(), f, indent=2)
+            json.dump(result_data, f, indent=2)
 
         summaries.append(
             {
