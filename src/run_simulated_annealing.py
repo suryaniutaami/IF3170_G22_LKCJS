@@ -93,9 +93,9 @@ def main():
         print(f"Seed run {run_no}: {run_seed}; suhu awal terkalibrasi: {initial_temperature:.6g}")
         algorithm = SimulatedAnnealing(
             initial_temperature=initial_temperature,
-            cooling_rate=0.99,
-            min_temperature=1e-3,
-            max_iterations=5000,
+            cooling_rate=SimulatedAnnealing.DEFAULT_COOLING_RATE,
+            min_temperature=SimulatedAnnealing.DEFAULT_MIN_TEMPERATURE,
+            max_iterations=SimulatedAnnealing.DEFAULT_MAX_ITERATIONS,
             stuck_threshold=20,
             max_neighbor_attempts=100,
             seed=run_seed,

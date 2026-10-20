@@ -10,12 +10,17 @@ from .result import SimulatedAnnealingResult
 
 
 class SimulatedAnnealing:
+    # Default dipakai juga oleh main.py dan run_simulated_annealing.py agar seragam.
+    DEFAULT_COOLING_RATE = 0.999
+    DEFAULT_MIN_TEMPERATURE = 1e-3
+    DEFAULT_MAX_ITERATIONS = 5000
+
     def __init__(
         self,
         initial_temperature: float = 100.0,
-        cooling_rate: float = 0.999,
-        min_temperature: float = 1e-3,
-        max_iterations: int = 5000,
+        cooling_rate: float = DEFAULT_COOLING_RATE,
+        min_temperature: float = DEFAULT_MIN_TEMPERATURE,
+        max_iterations: int = DEFAULT_MAX_ITERATIONS,
         max_neighbor_attempts: int = 100,
         stuck_threshold: int = 20,
         seed: int | None = None,

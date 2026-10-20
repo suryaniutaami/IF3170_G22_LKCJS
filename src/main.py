@@ -217,9 +217,9 @@ def build_algorithm(args: argparse.Namespace, name: str, seed: int, initial_stat
         return RandomRestartHillClimbing(max_restarts=limit, target_value=target, seed=seed)
 
     if name == "simulated_annealing":
-        min_temperature = args.min_temperature if args.min_temperature is not None else 0.001
-        cooling_rate = args.cooling_rate if args.cooling_rate is not None else 0.99
-        max_iterations = args.max_iterations if args.max_iterations is not None else ask_int("Batas iterasi", 5000)
+        min_temperature = args.min_temperature if args.min_temperature is not None else SimulatedAnnealing.DEFAULT_MIN_TEMPERATURE
+        cooling_rate = args.cooling_rate if args.cooling_rate is not None else SimulatedAnnealing.DEFAULT_COOLING_RATE
+        max_iterations = args.max_iterations if args.max_iterations is not None else ask_int("Batas iterasi", SimulatedAnnealing.DEFAULT_MAX_ITERATIONS)
         attempts = args.max_neighbor_attempts if args.max_neighbor_attempts is not None else 100
         stuck = args.stuck_threshold if args.stuck_threshold is not None else 20
         target_acceptance = args.target_acceptance if args.target_acceptance is not None else 0.9
