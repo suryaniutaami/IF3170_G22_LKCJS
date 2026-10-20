@@ -126,7 +126,6 @@ def load_input(filename: str, n_trucks: int | None):
     finally:
         os.chdir(previous_cwd)
 
-
 def calibrate_initial_temperature(
     state: State,
     *,
@@ -301,6 +300,7 @@ def main() -> None:
     print(f"Nilai awal    : {result.initial_value}")
     print(f"Nilai akhir   : {result.final_value}")
     print(f"Iterasi       : {result.iterations}")
+    print(f"Durasi pencarian: {result.duration_seconds:.6f} detik")
     print(f"Alasan berhenti: {result.stop_reason}")
     print(f"Output        : {path}")
 
