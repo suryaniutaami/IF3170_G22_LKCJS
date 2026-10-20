@@ -15,9 +15,11 @@ class RandomRestartHillClimbing(HillClimbingBase):
     run maksimum adalah `max_restarts + 1`.
     """
 
+    DEFAULT_MAX_RESTARTS = 10
+
     def __init__(
         self,
-        max_restarts: int = 10,
+        max_restarts: int = DEFAULT_MAX_RESTARTS,
         target_value: int | None = None,
         seed: int | None = None,
     ):

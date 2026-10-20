@@ -12,7 +12,10 @@ class SidewaysMoveHillClimbing(HillClimbingBase):
     Ketika ditemukan perbaikan, counter sideways berturut-turut di-reset.
     """
 
-    def __init__(self, max_sideways: int = 100, seed: int | None = None):
+    # Default batas sideways mengikuti contoh 8-queens pada salindia kuliah (limit 100).
+    DEFAULT_MAX_SIDEWAYS = 100
+
+    def __init__(self, max_sideways: int = DEFAULT_MAX_SIDEWAYS, seed: int | None = None):
         super().__init__(seed=seed)
         if max_sideways < 0:
             raise ValueError("max_sideways tidak boleh negatif.")

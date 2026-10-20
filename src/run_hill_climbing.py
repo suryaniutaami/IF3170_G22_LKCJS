@@ -41,9 +41,10 @@ def main():
 
     algorithms = [
         SteepestAscentHillClimbing(seed=42),
-        SidewaysMoveHillClimbing(max_sideways=10, seed=42),
-        StochasticHillClimbing(max_iterations=100, seed=42),
-        RandomRestartHillClimbing(max_restarts=3, seed=42),
+        # Parameter memakai default kelas agar seragam dengan main.py dan run_visualization.py.
+        SidewaysMoveHillClimbing(seed=42),
+        StochasticHillClimbing(seed=42),
+        RandomRestartHillClimbing(seed=42),
     ]
 
     print("Initial state valid:", initial_state.isValid())

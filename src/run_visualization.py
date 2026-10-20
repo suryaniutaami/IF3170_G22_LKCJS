@@ -24,9 +24,17 @@ OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output" / "visualization"
 ALGORITHMS = {
     "steepest": lambda args: SteepestAscentHillClimbing(seed=args.seed),
     "sideways": lambda args: SidewaysMoveHillClimbing(max_sideways=args.max_sideways, seed=args.seed),
-    "stochastic": lambda args: StochasticHillClimbing(max_iterations=args.max_iterations, seed=args.seed),
+    # --max-iterations dipakai bersama Stochastic HC dan SA; jika kosong, tiap kelas memakai default-nya sendiri.
+    "stochastic": lambda args: StochasticHillClimbing(
+        max_iterations=args.max_iterations if args.max_iterations is not None else StochasticHillClimbing.DEFAULT_MAX_ITERATIONS,
+        seed=args.seed,
+    ),
     "random_restart": lambda args: RandomRestartHillClimbing(max_restarts=args.max_restarts, seed=args.seed),
-    "simulated_annealing": lambda args: SimulatedAnnealing(max_iterations=args.max_iterations, seed=args.seed),
+    "simulated_annealing": lambda args: (
+        SimulatedAnnealing(max_iterations=args.max_iterations, seed=args.seed)
+        if args.max_iterations is not None
+        else SimulatedAnnealing(seed=args.seed)
+    ),
     "genetic_algorithm": lambda args: GeneticAlgorithm(nPopulation=args.ga_population, nGeneration=args.ga_generations, seed=args.seed),
 }
 
@@ -38,9 +46,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trucks", type=int, default=None, help="Gandakan truk tunggal pada file menjadi N truk")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
 
-    parser.add_argument("--max-sideways", type=int, default=10, help="[sideways] batas sideways move")
-    parser.add_argument("--max-iterations", type=int, default=1000, help="[stochastic/SA] batas iterasi")
-    parser.add_argument("--max-restarts", type=int, default=3, help="[random_restart] batas restart")
+    parser.add_argument("--max-sideways", type=int, default=SidewaysMoveHillClimbing.DEFAULT_MAX_SIDEWAYS, help="[sideways] batas sideways move")
+    parser.add_argument("--max-iterations", type=int, default=None, help="[stochastic/SA] batas iterasi (default: default kelas masing-masing)")
+    parser.add_argument("--max-restarts", type=int, default=RandomRestartHillClimbing.DEFAULT_MAX_RESTARTS, help="[random_restart] batas restart")
     parser.add_argument("--ga-population", type=int, default=10, help="[genetic_algorithm] jumlah populasi")
     parser.add_argument("--ga-generations", type=int, default=100, help="[genetic_algorithm] jumlah generasi")
 

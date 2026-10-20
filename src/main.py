@@ -205,15 +205,14 @@ def build_algorithm(args: argparse.Namespace, name: str, seed: int, initial_stat
         if variant == "steepest":
             return SteepestAscentHillClimbing(seed=seed)
         if variant == "sideways":
-            limit = args.max_sideways if args.max_sideways is not None else ask_int("Batas sideways move", 10)
+            limit = args.max_sideways if args.max_sideways is not None else ask_int("Batas sideways move", SidewaysMoveHillClimbing.DEFAULT_MAX_SIDEWAYS)
             return SidewaysMoveHillClimbing(max_sideways=limit, seed=seed)
         if variant == "stochastic":
-            # Selaras dengan run_hill_climbing.py dan run_visualization.py
-            # memakai default terpisah sebesar 1000.
-            limit = args.max_iterations if args.max_iterations is not None else ask_int("Batas iterasi", 100)
-            attempts = args.max_neighbor_attempts if args.max_neighbor_attempts is not None else ask_int("Percobaan maksimum mencari neighbor valid", 100)
+            # Default diambil dari kelas agar seragam dengan run_hill_climbing.py dan run_visualization.py.
+            limit = args.max_iterations if args.max_iterations is not None else ask_int("Batas iterasi", StochasticHillClimbing.DEFAULT_MAX_ITERATIONS)
+            attempts = args.max_neighbor_attempts if args.max_neighbor_attempts is not None else ask_int("Percobaan maksimum mencari neighbor valid", StochasticHillClimbing.DEFAULT_MAX_NEIGHBOR_ATTEMPTS)
             return StochasticHillClimbing(max_iterations=limit, max_neighbor_attempts=attempts, seed=seed)
-        limit = args.max_restarts if args.max_restarts is not None else ask_int("Jumlah restart (di luar run pertama)", 3)
+        limit = args.max_restarts if args.max_restarts is not None else ask_int("Jumlah restart (di luar run pertama)", RandomRestartHillClimbing.DEFAULT_MAX_RESTARTS)
         target = args.target_value if args.target_value is not None else ask_optional_int("Nilai target (kosongkan untuk tanpa target)")
         return RandomRestartHillClimbing(max_restarts=limit, target_value=target, seed=seed)
 

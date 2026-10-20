@@ -13,10 +13,13 @@ class StochasticHillClimbing(HillClimbingBase):
     buruk dilewati. Pencarian berhenti saat `max_iterations` tercapai.
     """
 
+    DEFAULT_MAX_ITERATIONS = 1000
+    DEFAULT_MAX_NEIGHBOR_ATTEMPTS = 100
+
     def __init__(
         self,
-        max_iterations: int = 1000,
-        max_neighbor_attempts: int = 100,
+        max_iterations: int = DEFAULT_MAX_ITERATIONS,
+        max_neighbor_attempts: int = DEFAULT_MAX_NEIGHBOR_ATTEMPTS,
         seed: int | None = None,
     ):
         super().__init__(seed=seed)
